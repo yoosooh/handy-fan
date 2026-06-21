@@ -1,0 +1,33 @@
+const CACHE_NAME = 'handy-fan-v8';
+const ASSETS = ['./', './index.html', './manifest.json', './fan.png', './icons/icon-192.png', './icons/icon-512.png'];
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+    )
+  );
+  self.clients.claim();
+});
+
+// Network-first: always try to fetch the latest file; only fall back to the
+// cache when offline. Keeps the app installable without serving stale builds
+// while this is still actively being tweaked.
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    fetch(event.request)
+      .then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+        return res;
+      })
+      .catch(() => caches.match(event.request))
+  );
+});

@@ -1,0 +1,7 @@
+# 원본 대용량 소스 이미지 (앱 실행에 불필요)
+Gemini_Generated_Image_*.png
+fan2_cutout.png
+
+# 에디터/도구
+.claude/
+*.tmp
