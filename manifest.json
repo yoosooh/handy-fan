@@ -1,7 +1,7 @@
 {
-  "name": "핸디 선풍기",
-  "short_name": "선풍기",
-  "description": "내 손안의 핸디 선풍기",
+  "name": "핸디 선풍기 (백색소음)",
+  "short_name": "핸디 선풍기",
+  "description": "백색소음이 나오는 핸디 선풍기",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
