@@ -112,7 +112,7 @@
   <div id="tdisplay"></div>
 
   <div class="infobtn" onclick="openInfo()">🌙 백색소음 &amp; 안전 안내</div>
-  <div class="safety">아기와 2m 이상 거리 · 너무 크지 않게</div>
+  <div class="safety">볼륨은 너무 크지 않게 틀어주세요</div>
 </div>
 
 <!-- 안내 모달 -->
@@ -130,18 +130,13 @@
 
     <h3>안전하게 사용하기</h3>
     <div class="note">
-      <p>• 음량은 약 <b>50dB 이하</b>로, 너무 크지 않게<br>
-         • 폰(기기)은 아기와 <b>최소 2m 이상</b> 떨어뜨리기<br>
+      <p>• 음량은 <b>너무 크지 않게</b> (아기 귀에서 약 50dB 이하)<br>
+         • 머리맡 바로 위보다 <b>발치·살짝 떨어진 곳</b> 권장<br>
          • 밤새 크게 틀지 말고 <b>타이머</b> 사용 권장</p>
       <p>과도한 음량·장시간 노출은 아기 청력에 해로울 수 있어요.</p>
     </div>
 
-    <h3>출처</h3>
-    <p class="src">
-      · 미국소아과학회(AAP), healthychildren.org<br>
-      · Hugh SC et al., “Infant Sleep Machines and Hazardous Sound Pressure Levels”, <i>Pediatrics</i>, 2014<br>
-      ※ 일반 정보이며, 자세한 사항은 소아과 전문의와 상담하세요.
-    </p>
+    <p class="src">※ 일반적인 정보이며, 궁금한 점은 소아과 전문의와 상담하세요.</p>
   </div>
 </div>
 
@@ -169,7 +164,7 @@ body.onload = layout;
 window.addEventListener('resize', layout);
 
 /* ---------- 날개 회전 (부드러운 가속/감속) ---------- */
-const SPIN_SPEED = [0, 300, 620, 1100];
+const SPIN_SPEED = [0, 180, 300, 750];
 let angle = 0, curSpeed = 0, targetSpeed = 0, lastT = 0, rafId = null;
 function animate(t){
   if(!lastT) lastT = t;
