@@ -209,7 +209,7 @@ const label = document.getElementById('label');
 const labels = ['꺼짐', '1단 · 자궁 속 (브라운)', '2단 · 빗소리 (핑크)', '3단 · 바람소리'];
 // 단계별로 '다른 백색소음' = 필터 톤을 다르게 (낮을수록 먹먹/포근)
 const cutoff   = [300, 320, 650, 1400];
-const noiseVol = [0, 0.05, 0.08, 0.12];   // 최대 음량 낮춤 (안전)
+const noiseVol = [0, 0.13, 0.22, 0.32];   // 음량 상향 (폰에서 충분히 들리게)
 let level = 0;
 
 function setLevel(s){
