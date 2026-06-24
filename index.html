@@ -103,7 +103,7 @@ body.onload = layout;
 window.addEventListener('resize', layout);
 
 /* ---------- 날개 회전 (부드러운 가속/감속) ---------- */
-const SPIN_SPEED = [0, 150, 320, 620];  // 단계별 목표 속도(°/초)
+const SPIN_SPEED = [0, 300, 620, 1100];  // 단계별 목표 속도(°/초)
 let angle = 0, curSpeed = 0, targetSpeed = 0, lastT = 0, rafId = null;
 
 function animate(t){
