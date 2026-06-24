@@ -58,6 +58,7 @@
   }
   .infobtn:active{transform:scale(0.97)}
   .safety{margin-top:10px;color:#aebcb4;font-size:11px}
+  #ver{margin-top:6px;color:#cfd6d2;font-size:10px}
 
   /* 모달 */
   .modal{
@@ -113,6 +114,7 @@
 
   <div class="infobtn" onclick="openInfo()">🌙 백색소음 &amp; 안전 안내</div>
   <div class="safety">볼륨은 너무 크지 않게 틀어주세요</div>
+  <div id="ver">v23</div>
 </div>
 
 <!-- 안내 모달 -->
@@ -204,7 +206,7 @@ function ensureAudio(){
   const limiter = actx.createDynamicsCompressor();
   limiter.threshold.value = -10; limiter.knee.value = 6; limiter.ratio.value = 12;
   limiter.attack.value = 0.005; limiter.release.value = 0.25;
-  const boost = actx.createGain(); boost.gain.value = 2.0;
+  const boost = actx.createGain(); boost.gain.value = 1.3;
   src.connect(highpass); highpass.connect(lowpass); lowpass.connect(noiseGain);
   noiseGain.connect(boost); boost.connect(limiter); limiter.connect(actx.destination);
   src.start();
@@ -214,8 +216,8 @@ function ensureAudio(){
 const label = document.getElementById('label');
 const labels = ['꺼짐', '1단 · 자궁 속 (브라운)', '2단 · 빗소리 (핑크)', '3단 · 바람소리'];
 // 단계별로 '다른 백색소음' = 필터 톤을 다르게 (낮을수록 먹먹/포근)
-const cutoff   = [250, 450, 900, 1600];
-const noiseVol = [0, 0.55, 0.85, 1.15];   // 너무 크고 날카로웠던 것 보정 (부드럽게, 적당한 음량)
+const cutoff   = [180, 280, 480, 750];    // 고음 더 억제 (덜 날카롭게, 저음 중심)
+const noiseVol = [0, 0.4, 0.6, 0.8];      // 음량 다시 낮춤 (적당히)
 let level = 0;
 
 function setLevel(s){
