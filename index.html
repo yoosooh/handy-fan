@@ -200,7 +200,12 @@ function ensureAudio(){
   lowpass = actx.createBiquadFilter();
   lowpass.type = 'lowpass'; lowpass.frequency.value = 300;
   noiseGain = actx.createGain(); noiseGain.gain.value = 0;
-  src.connect(highpass); highpass.connect(lowpass); lowpass.connect(noiseGain); noiseGain.connect(actx.destination);
+  // 리미터: 음량 크게 올려도 찌그러지지 않게
+  const limiter = actx.createDynamicsCompressor();
+  limiter.threshold.value = -3; limiter.knee.value = 0; limiter.ratio.value = 20;
+  limiter.attack.value = 0.003; limiter.release.value = 0.25;
+  src.connect(highpass); highpass.connect(lowpass); lowpass.connect(noiseGain);
+  noiseGain.connect(limiter); limiter.connect(actx.destination);
   src.start();
 }
 
@@ -208,8 +213,8 @@ function ensureAudio(){
 const label = document.getElementById('label');
 const labels = ['꺼짐', '1단 · 자궁 속 (브라운)', '2단 · 빗소리 (핑크)', '3단 · 바람소리'];
 // 단계별로 '다른 백색소음' = 필터 톤을 다르게 (낮을수록 먹먹/포근)
-const cutoff   = [300, 320, 650, 1400];
-const noiseVol = [0, 0.13, 0.22, 0.32];   // 음량 상향 (폰에서 충분히 들리게)
+const cutoff   = [300, 600, 1500, 3500];
+const noiseVol = [0, 0.6, 1.1, 1.8];      // 음량 대폭 상향 (리미터로 보호)
 let level = 0;
 
 function setLevel(s){
