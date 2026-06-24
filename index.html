@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-title" content="핸디 선풍기">
 <style>
   body{margin:0;background:#ffffff;display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;-webkit-user-select:none;user-select:none}
-  .app{text-align:center}
+  .app{text-align:center;padding:16px}
   #stage{position:relative;display:inline-block}
 
   .fan-blades{
@@ -37,7 +37,7 @@
   }
   .ctrl button:active{transform:scale(0.94)}
   .ctrl button.active{background:#aaccbb;color:#fff}
-  #label{margin-top:12px;color:#557766;font-size:14px}
+  #label{margin-top:12px;color:#557766;font-size:14px;min-height:18px}
 
   .timer{margin-top:22px;display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
   .timer .tt{color:#88a89a;font-size:13px;margin-right:2px}
@@ -49,6 +49,39 @@
   .timer button:active{transform:scale(0.94)}
   .timer button.active{background:#aaccbb;color:#fff;border-color:#aaccbb}
   #tdisplay{margin-top:10px;color:#7a9d8c;font-size:13px;min-height:18px}
+
+  /* 안내 버튼 */
+  .infobtn{
+    margin-top:16px;display:inline-flex;align-items:center;gap:6px;
+    padding:8px 14px;border-radius:20px;border:1px solid #e0e8e4;background:#f6faf8;
+    color:#6f9384;font-size:13px;cursor:pointer;
+  }
+  .infobtn:active{transform:scale(0.97)}
+  .safety{margin-top:10px;color:#aebcb4;font-size:11px}
+
+  /* 모달 */
+  .modal{
+    position:fixed;inset:0;background:rgba(40,55,48,0.45);
+    display:none;align-items:center;justify-content:center;z-index:50;padding:18px;
+  }
+  .modal.open{display:flex}
+  .card{
+    background:#fff;max-width:360px;width:100%;max-height:84vh;overflow:auto;
+    border-radius:18px;padding:22px 20px 24px;text-align:left;position:relative;
+    box-shadow:0 12px 40px rgba(0,0,0,0.2);
+  }
+  .card h2{margin:0 0 4px;font-size:18px;color:#3f5d50}
+  .card .x{
+    position:absolute;top:12px;right:12px;width:30px;height:30px;border:none;border-radius:50%;
+    background:#eef3f0;color:#557766;font-size:15px;cursor:pointer;line-height:30px;
+  }
+  .card h3{margin:18px 0 6px;font-size:14px;color:#4a7561}
+  .card p{margin:6px 0;font-size:13px;line-height:1.65;color:#555}
+  .lvl{display:flex;gap:8px;margin:8px 0;font-size:13px;line-height:1.55}
+  .lvl b{color:#37a06a;white-space:nowrap}
+  .note{background:#fbf7ec;border:1px solid #f0e6c8;border-radius:10px;padding:10px 12px;margin-top:6px}
+  .note p{color:#7a6a3a}
+  .src{font-size:11px;color:#9aa6a0;line-height:1.6;margin-top:6px}
 </style>
 </head>
 <body>
@@ -77,10 +110,43 @@
     <button id="tcancel" onclick="clearTimer()">해제</button>
   </div>
   <div id="tdisplay"></div>
+
+  <div class="infobtn" onclick="openInfo()">🌙 백색소음 &amp; 안전 안내</div>
+  <div class="safety">아기와 2m 이상 거리 · 너무 크지 않게</div>
+</div>
+
+<!-- 안내 모달 -->
+<div id="infoModal" class="modal" onclick="if(event.target===this)closeInfo()">
+  <div class="card">
+    <button class="x" onclick="closeInfo()">✕</button>
+    <h2>🌙 우리 아기 백색소음</h2>
+
+    <p>저역 중심의 <b>핑크·브라운 노이즈</b>는 엄마 뱃속(자궁) 소리와 비슷해서, 신생아·영유아가 더 빨리 안정되고 잘 잠들어요.</p>
+
+    <h3>단계별 소리</h3>
+    <div class="lvl"><b>1단 · 자궁 속</b><span>가장 낮고 먹먹한 “우웅~”. 갓 태어난 신생아가 자궁 소리처럼 느껴 가장 편안해해요.</span></div>
+    <div class="lvl"><b>2단 · 빗소리</b><span>잔잔하게 “쏴아~”. 칭얼대는 아기를 부드럽게 달랠 때 좋아요.</span></div>
+    <div class="lvl"><b>3단 · 바람소리</b><span>조금 더 또렷한 “쉬이~”. 울음이 클 때 더 확실히 덮어 진정시켜요.</span></div>
+
+    <h3>안전하게 사용하기</h3>
+    <div class="note">
+      <p>• 음량은 약 <b>50dB 이하</b>로, 너무 크지 않게<br>
+         • 폰(기기)은 아기와 <b>최소 2m 이상</b> 떨어뜨리기<br>
+         • 밤새 크게 틀지 말고 <b>타이머</b> 사용 권장</p>
+      <p>과도한 음량·장시간 노출은 아기 청력에 해로울 수 있어요.</p>
+    </div>
+
+    <h3>출처</h3>
+    <p class="src">
+      · 미국소아과학회(AAP), healthychildren.org<br>
+      · Hugh SC et al., “Infant Sleep Machines and Hazardous Sound Pressure Levels”, <i>Pediatrics</i>, 2014<br>
+      ※ 일반 정보이며, 자세한 사항은 소아과 전문의와 상담하세요.
+    </p>
+  </div>
 </div>
 
 <script>
-/* ---------- 레이아웃 (날개/LED 위치) ---------- */
+/* ---------- 레이아웃 ---------- */
 const GCX = 0.5008, GCY = 0.2627, BLADE_W = 0.86;
 const LED_POS = [[0.4575,0.6236],[0.4997,0.6237],[0.5419,0.6236]];
 const leds = [led0, led1, led2];
@@ -103,30 +169,21 @@ body.onload = layout;
 window.addEventListener('resize', layout);
 
 /* ---------- 날개 회전 (부드러운 가속/감속) ---------- */
-const SPIN_SPEED = [0, 300, 620, 1100];  // 단계별 목표 속도(°/초)
+const SPIN_SPEED = [0, 300, 620, 1100];
 let angle = 0, curSpeed = 0, targetSpeed = 0, lastT = 0, rafId = null;
-
 function animate(t){
   if(!lastT) lastT = t;
-  const dt = Math.min(0.05, (t - lastT) / 1000);
-  lastT = t;
-  // 가속은 빠르게, 감속(끌 때)은 천천히 → 자연스럽게 멈춤
+  const dt = Math.min(0.05, (t - lastT) / 1000); lastT = t;
   const tau = targetSpeed >= curSpeed ? 0.45 : 1.6;
   curSpeed += (targetSpeed - curSpeed) * (1 - Math.exp(-dt / tau));
   angle = (angle + curSpeed * dt) % 360;
   blades.style.transform = 'rotate(' + angle + 'deg)';
-  if(curSpeed > 0.3 || targetSpeed > 0){
-    rafId = requestAnimationFrame(animate);
-  } else {
-    curSpeed = 0; rafId = null; lastT = 0;
-  }
+  if(curSpeed > 0.3 || targetSpeed > 0){ rafId = requestAnimationFrame(animate); }
+  else { curSpeed = 0; rafId = null; lastT = 0; }
 }
-function setSpin(lv){
-  targetSpeed = SPIN_SPEED[lv];
-  if(!rafId){ lastT = 0; rafId = requestAnimationFrame(animate); }
-}
+function setSpin(lv){ targetSpeed = SPIN_SPEED[lv]; if(!rafId){ lastT = 0; rafId = requestAnimationFrame(animate); } }
 
-/* ---------- 백색소음 (신생아용: 포근한 핑크노이즈) ---------- */
+/* ---------- 백색소음 (신생아용 핑크/브라운) ---------- */
 let actx, noiseGain, lowpass;
 function ensureAudio(){
   if(actx) return;
@@ -134,33 +191,30 @@ function ensureAudio(){
   const len = actx.sampleRate*3;
   const buf = actx.createBuffer(1, len, actx.sampleRate);
   const d = buf.getChannelData(0);
-  // 핑크노이즈 (Paul Kellet) — 저역 중심의 부드러운 노이즈 = 자궁 속/헤어드라이어 느낌
   let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
   for(let i=0;i<len;i++){
     const w = Math.random()*2 - 1;
     b0=0.99886*b0+w*0.0555179; b1=0.99332*b1+w*0.0750759; b2=0.96900*b2+w*0.1538520;
     b3=0.86650*b3+w*0.3104856; b4=0.55000*b4+w*0.5329522; b5=-0.7616*b5-w*0.0168980;
-    d[i]=(b0+b1+b2+b3+b4+b5+b6+w*0.5362)*0.11;
-    b6=w*0.115926;
+    d[i]=(b0+b1+b2+b3+b4+b5+b6+w*0.5362)*0.11; b6=w*0.115926;
   }
   const src = actx.createBufferSource();
   src.buffer = buf; src.loop = true;
-  // 초저역만 살짝 정리 + 고음 깎아 포근하게
   const highpass = actx.createBiquadFilter();
-  highpass.type = 'highpass'; highpass.frequency.value = 50;
+  highpass.type = 'highpass'; highpass.frequency.value = 45;
   lowpass = actx.createBiquadFilter();
-  lowpass.type = 'lowpass'; lowpass.frequency.value = 600;
-  noiseGain = actx.createGain();
-  noiseGain.gain.value = 0;
+  lowpass.type = 'lowpass'; lowpass.frequency.value = 300;
+  noiseGain = actx.createGain(); noiseGain.gain.value = 0;
   src.connect(highpass); highpass.connect(lowpass); lowpass.connect(noiseGain); noiseGain.connect(actx.destination);
   src.start();
 }
 
 /* ---------- 단계 제어 ---------- */
 const label = document.getElementById('label');
-const labels = ['꺼짐','약풍 (1단)','중풍 (2단)','강풍 (3단)'];
-const noiseVol = [0, 0.07, 0.12, 0.18];      // 백색소음 볼륨
-const cutoff   = [400, 550, 750, 1000];      // 낮게 유지 → 포근하고 둥근 신생아용 톤
+const labels = ['꺼짐', '1단 · 자궁 속 (브라운)', '2단 · 빗소리 (핑크)', '3단 · 바람소리'];
+// 단계별로 '다른 백색소음' = 필터 톤을 다르게 (낮을수록 먹먹/포근)
+const cutoff   = [300, 320, 650, 1400];
+const noiseVol = [0, 0.05, 0.08, 0.12];   // 최대 음량 낮춤 (안전)
 let level = 0;
 
 function setLevel(s){
@@ -169,30 +223,27 @@ function setLevel(s){
   label.textContent = labels[s];
   leds.forEach((led,i)=>led.classList.toggle('on', i<s));
 
-  setSpin(s);  // 부드럽게 가속/감속
+  setSpin(s);
 
   ensureAudio();
   if(actx.state === 'suspended') actx.resume();
   const now = actx.currentTime;
-  // 끌 때(0)는 소리도 천천히 페이드, 단계 변경은 살짝 부드럽게
-  const fade = s === 0 ? 0.5 : 0.15;
+  const fade = s === 0 ? 0.5 : 0.2;
   noiseGain.gain.setTargetAtTime(noiseVol[s], now, fade);
-  lowpass.frequency.setTargetAtTime(cutoff[s], now, 0.15);
+  lowpass.frequency.setTargetAtTime(cutoff[s], now, 0.2);
 
-  if(s === 0) clearTimer();  // 끄면 타이머도 해제
+  if(s === 0) clearTimer();
 }
 
 /* ---------- 타이머 ---------- */
 let timerEnd = 0, tIv = null;
 const tdisplay = document.getElementById('tdisplay');
 const timerBtns = document.querySelectorAll('.timer button[data-min]');
-
 function setTimer(min, btn){
   if(tIv){ clearInterval(tIv); tIv = null; }
   timerEnd = Date.now() + min*60000;
   timerBtns.forEach(b=>b.classList.toggle('active', b===btn));
-  tIv = setInterval(tick, 1000);
-  tick();
+  tIv = setInterval(tick, 1000); tick();
 }
 function tick(){
   const rem = timerEnd - Date.now();
@@ -202,17 +253,21 @@ function tick(){
 }
 function clearTimer(){
   if(tIv){ clearInterval(tIv); tIv = null; }
-  timerEnd = 0;
-  timerBtns.forEach(b=>b.classList.remove('active'));
-  tdisplay.textContent = '';
+  timerEnd = 0; timerBtns.forEach(b=>b.classList.remove('active')); tdisplay.textContent = '';
 }
+
+/* ---------- 안내 모달 ---------- */
+const infoModal = document.getElementById('infoModal');
+function openInfo(){ infoModal.classList.add('open'); }
+function closeInfo(){ infoModal.classList.remove('open'); }
 
 /* ---------- PWA ---------- */
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 }
-const __auto = new URLSearchParams(location.search).get('auto');
-if(__auto){ setLevel(parseInt(__auto,10)); }
+const __qs = new URLSearchParams(location.search);
+if(__qs.get('auto')){ setLevel(parseInt(__qs.get('auto'),10)); }
+if(__qs.get('info')){ openInfo(); }
 </script>
 </body>
 </html>
