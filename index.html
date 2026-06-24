@@ -202,9 +202,9 @@ function ensureAudio(){
   noiseGain = actx.createGain(); noiseGain.gain.value = 0;
   // 리미터: 음량 크게 올려도 찌그러지지 않게
   const limiter = actx.createDynamicsCompressor();
-  limiter.threshold.value = -18; limiter.knee.value = 6; limiter.ratio.value = 20;
-  limiter.attack.value = 0.002; limiter.release.value = 0.25;
-  const boost = actx.createGain(); boost.gain.value = 4.5;
+  limiter.threshold.value = -10; limiter.knee.value = 6; limiter.ratio.value = 12;
+  limiter.attack.value = 0.005; limiter.release.value = 0.25;
+  const boost = actx.createGain(); boost.gain.value = 2.0;
   src.connect(highpass); highpass.connect(lowpass); lowpass.connect(noiseGain);
   noiseGain.connect(boost); boost.connect(limiter); limiter.connect(actx.destination);
   src.start();
@@ -214,8 +214,8 @@ function ensureAudio(){
 const label = document.getElementById('label');
 const labels = ['꺼짐', '1단 · 자궁 속 (브라운)', '2단 · 빗소리 (핑크)', '3단 · 바람소리'];
 // 단계별로 '다른 백색소음' = 필터 톤을 다르게 (낮을수록 먹먹/포근)
-const cutoff   = [300, 700, 1800, 4000];
-const noiseVol = [0, 1.0, 1.6, 2.2];      // 음량 대폭 상향 (리미터+부스트로 보호)
+const cutoff   = [250, 450, 900, 1600];
+const noiseVol = [0, 0.55, 0.85, 1.15];   // 너무 크고 날카로웠던 것 보정 (부드럽게, 적당한 음량)
 let level = 0;
 
 function setLevel(s){
