@@ -29,8 +29,6 @@
   }
   .led.on{background:#37e23a;box-shadow:0 0 6px 1px rgba(55,226,58,0.85)}
 
-  @keyframes spin { from{transform:rotate(0)} to{transform:rotate(360deg)} }
-
   .ctrl{margin-top:20px}
   .ctrl button{
     width:56px;height:48px;margin:0 5px;border-radius:12px;
@@ -104,32 +102,56 @@ if(body.complete && body.naturalWidth) layout();
 body.onload = layout;
 window.addEventListener('resize', layout);
 
-/* ---------- 백색소음(선풍기 바람소리) ---------- */
+/* ---------- 날개 회전 (부드러운 가속/감속) ---------- */
+const SPIN_SPEED = [0, 150, 320, 620];  // 단계별 목표 속도(°/초)
+let angle = 0, curSpeed = 0, targetSpeed = 0, lastT = 0, rafId = null;
+
+function animate(t){
+  if(!lastT) lastT = t;
+  const dt = Math.min(0.05, (t - lastT) / 1000);
+  lastT = t;
+  // 가속은 빠르게, 감속(끌 때)은 천천히 → 자연스럽게 멈춤
+  const tau = targetSpeed >= curSpeed ? 0.45 : 1.6;
+  curSpeed += (targetSpeed - curSpeed) * (1 - Math.exp(-dt / tau));
+  angle = (angle + curSpeed * dt) % 360;
+  blades.style.transform = 'rotate(' + angle + 'deg)';
+  if(curSpeed > 0.3 || targetSpeed > 0){
+    rafId = requestAnimationFrame(animate);
+  } else {
+    curSpeed = 0; rafId = null; lastT = 0;
+  }
+}
+function setSpin(lv){
+  targetSpeed = SPIN_SPEED[lv];
+  if(!rafId){ lastT = 0; rafId = requestAnimationFrame(animate); }
+}
+
+/* ---------- 백색소음 (선풍기 바람소리) ---------- */
 let actx, noiseGain, lowpass;
 function ensureAudio(){
   if(actx) return;
   actx = new (window.AudioContext||window.webkitAudioContext)();
-  // 화이트노이즈 버퍼 (2초, 반복)
   const buf = actx.createBuffer(1, actx.sampleRate*2, actx.sampleRate);
   const d = buf.getChannelData(0);
   for(let i=0;i<d.length;i++) d[i] = Math.random()*2 - 1;
   const src = actx.createBufferSource();
   src.buffer = buf; src.loop = true;
+  // 저음 웅웅거림 제거(하이패스) → 고역 살린 로우패스 = 백색소음 "쉬이~"
+  const highpass = actx.createBiquadFilter();
+  highpass.type = 'highpass'; highpass.frequency.value = 220;
   lowpass = actx.createBiquadFilter();
-  lowpass.type = 'lowpass';
-  lowpass.frequency.value = 700;
+  lowpass.type = 'lowpass'; lowpass.frequency.value = 1000;
   noiseGain = actx.createGain();
   noiseGain.gain.value = 0;
-  src.connect(lowpass); lowpass.connect(noiseGain); noiseGain.connect(actx.destination);
+  src.connect(highpass); highpass.connect(lowpass); lowpass.connect(noiseGain); noiseGain.connect(actx.destination);
   src.start();
 }
 
 /* ---------- 단계 제어 ---------- */
 const label = document.getElementById('label');
 const labels = ['꺼짐','약풍 (1단)','중풍 (2단)','강풍 (3단)'];
-const durations = [0, 0.9, 0.45, 0.18];     // 회전 속도
-const noiseVol  = [0, 0.06, 0.11, 0.18];    // 백색소음 볼륨
-const cutoff    = [400, 750, 1200, 2000];   // 필터 (높을수록 시원/쉬이)
+const noiseVol = [0, 0.05, 0.09, 0.15];      // 백색소음 볼륨
+const cutoff   = [600, 2200, 4000, 7000];    // 높을수록 더 "쉬이~"한 백색소음
 let level = 0;
 
 function setLevel(s){
@@ -138,13 +160,15 @@ function setLevel(s){
   label.textContent = labels[s];
   leds.forEach((led,i)=>led.classList.toggle('on', i<s));
 
-  blades.style.animation = s===0 ? 'none' : `spin ${durations[s]}s linear infinite`;
+  setSpin(s);  // 부드럽게 가속/감속
 
   ensureAudio();
   if(actx.state === 'suspended') actx.resume();
   const now = actx.currentTime;
-  noiseGain.gain.setTargetAtTime(noiseVol[s], now, 0.08);
-  lowpass.frequency.setTargetAtTime(cutoff[s], now, 0.08);
+  // 끌 때(0)는 소리도 천천히 페이드, 단계 변경은 살짝 부드럽게
+  const fade = s === 0 ? 0.5 : 0.15;
+  noiseGain.gain.setTargetAtTime(noiseVol[s], now, fade);
+  lowpass.frequency.setTargetAtTime(cutoff[s], now, 0.15);
 
   if(s === 0) clearTimer();  // 끄면 타이머도 해제
 }
