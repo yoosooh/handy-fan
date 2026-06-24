@@ -126,21 +126,30 @@ function setSpin(lv){
   if(!rafId){ lastT = 0; rafId = requestAnimationFrame(animate); }
 }
 
-/* ---------- 백색소음 (선풍기 바람소리) ---------- */
+/* ---------- 백색소음 (신생아용: 포근한 핑크노이즈) ---------- */
 let actx, noiseGain, lowpass;
 function ensureAudio(){
   if(actx) return;
   actx = new (window.AudioContext||window.webkitAudioContext)();
-  const buf = actx.createBuffer(1, actx.sampleRate*2, actx.sampleRate);
+  const len = actx.sampleRate*3;
+  const buf = actx.createBuffer(1, len, actx.sampleRate);
   const d = buf.getChannelData(0);
-  for(let i=0;i<d.length;i++) d[i] = Math.random()*2 - 1;
+  // 핑크노이즈 (Paul Kellet) — 저역 중심의 부드러운 노이즈 = 자궁 속/헤어드라이어 느낌
+  let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
+  for(let i=0;i<len;i++){
+    const w = Math.random()*2 - 1;
+    b0=0.99886*b0+w*0.0555179; b1=0.99332*b1+w*0.0750759; b2=0.96900*b2+w*0.1538520;
+    b3=0.86650*b3+w*0.3104856; b4=0.55000*b4+w*0.5329522; b5=-0.7616*b5-w*0.0168980;
+    d[i]=(b0+b1+b2+b3+b4+b5+b6+w*0.5362)*0.11;
+    b6=w*0.115926;
+  }
   const src = actx.createBufferSource();
   src.buffer = buf; src.loop = true;
-  // 저음 웅웅거림 제거(하이패스) → 고역 살린 로우패스 = 백색소음 "쉬이~"
+  // 초저역만 살짝 정리 + 고음 깎아 포근하게
   const highpass = actx.createBiquadFilter();
-  highpass.type = 'highpass'; highpass.frequency.value = 220;
+  highpass.type = 'highpass'; highpass.frequency.value = 50;
   lowpass = actx.createBiquadFilter();
-  lowpass.type = 'lowpass'; lowpass.frequency.value = 1000;
+  lowpass.type = 'lowpass'; lowpass.frequency.value = 600;
   noiseGain = actx.createGain();
   noiseGain.gain.value = 0;
   src.connect(highpass); highpass.connect(lowpass); lowpass.connect(noiseGain); noiseGain.connect(actx.destination);
@@ -150,8 +159,8 @@ function ensureAudio(){
 /* ---------- 단계 제어 ---------- */
 const label = document.getElementById('label');
 const labels = ['꺼짐','약풍 (1단)','중풍 (2단)','강풍 (3단)'];
-const noiseVol = [0, 0.05, 0.09, 0.15];      // 백색소음 볼륨
-const cutoff   = [600, 2200, 4000, 7000];    // 높을수록 더 "쉬이~"한 백색소음
+const noiseVol = [0, 0.07, 0.12, 0.18];      // 백색소음 볼륨
+const cutoff   = [400, 550, 750, 1000];      // 낮게 유지 → 포근하고 둥근 신생아용 톤
 let level = 0;
 
 function setLevel(s){
