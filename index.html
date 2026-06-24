@@ -15,7 +15,42 @@
   body{margin:0;background:#ffffff;display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;-webkit-user-select:none;user-select:none}
   .app{text-align:center}
   #stage{position:relative;display:inline-block}
-  .fan-body{display:block;width:240px}
+
+  /* 뒤 레이어: 날개 (보호망 뒤에서 회전) */
+  .fan-blades{
+    position:absolute;
+    z-index:1;
+    background-image:url('blades.png');
+    background-size:100% 100%;
+    background-repeat:no-repeat;
+    will-change:transform;
+  }
+  /* 앞 레이어: 몸통 + 보호망 + 손잡이 (고정, 틈 사이로 날개가 비침) */
+  .fan-body{
+    display:block;
+    width:240px;
+    position:relative;
+    z-index:2;
+  }
+
+  /* 단계 표시 초록 LED (body 위에 오버레이) */
+  .led{
+    position:absolute;
+    z-index:3;
+    border-radius:50%;
+    background:#cfd6d2;          /* 꺼짐: 흐린 회색 */
+    transition:background .15s ease, box-shadow .15s ease;
+    pointer-events:none;
+  }
+  .led.on{
+    background:#37e23a;          /* 켜짐: 초록 */
+    box-shadow:0 0 6px 1px rgba(55,226,58,0.85);
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
 
   .ctrl{margin-top:20px}
   button{
@@ -31,7 +66,11 @@
 <body>
 <div class="app">
   <div id="stage">
-    <img class="fan-body" src="fan.png" alt="선풍기">
+    <div id="blades" class="fan-blades"></div>
+    <img id="body" class="fan-body" src="body.png" alt="선풍기">
+    <div class="led" id="led0"></div>
+    <div class="led" id="led1"></div>
+    <div class="led" id="led2"></div>
   </div>
   <div class="ctrl">
     <button id="b0" onclick="setLevel(0)">OFF</button>
@@ -43,12 +82,44 @@
 </div>
 
 <script>
+// 몸통 기준 보호망 중심/날개 크기 (몸통 이미지 비율)
+const GCX = 0.5008;   // 보호망 중심 x
+const GCY = 0.2627;   // 보호망 중심 y
+const BLADE_W = 0.86; // 날개 레이어 한 변 = 몸통 너비 * 이 값
+
+// 인디케이터 LED 위치 (body 이미지 비율 기준)
+const LED_POS = [[0.4575, 0.6236], [0.4997, 0.6237], [0.5419, 0.6236]];
+const leds = [document.getElementById('led0'), document.getElementById('led1'), document.getElementById('led2')];
+
+const body = document.getElementById('body');
+const blades = document.getElementById('blades');
+
+function layout(){
+  const w = body.clientWidth;
+  const h = w * (body.naturalHeight / body.naturalWidth);
+  const side = BLADE_W * w;
+  blades.style.width  = side + 'px';
+  blades.style.height = side + 'px';
+  blades.style.left = (GCX * w - side / 2) + 'px';
+  blades.style.top  = (GCY * h - side / 2) + 'px';
+
+  const d = 0.03 * w; // LED 지름
+  LED_POS.forEach((p, i) => {
+    leds[i].style.width  = d + 'px';
+    leds[i].style.height = d + 'px';
+    leds[i].style.left = (p[0] * w - d / 2) + 'px';
+    leds[i].style.top  = (p[1] * h - d / 2) + 'px';
+  });
+}
+if(body.complete && body.naturalWidth) layout();
+body.onload = layout;
+window.addEventListener('resize', layout);
+
 const label = document.getElementById('label');
 const labels = ['꺼짐', '약풍 (1단)', '중풍 (2단)', '강풍 (3단)'];
-
-// 단계별 모터 소리: 볼륨 + 주파수(빠를수록 높고 크게)
-const volumes = [0, 0.02, 0.045, 0.07];
-const freqs   = [110, 105, 125, 150];
+const durations = [0, 0.9, 0.45, 0.18];   // 한 바퀴 시간(초)
+const volumes   = [0, 0.02, 0.045, 0.07];
+const freqs     = [110, 105, 125, 150];
 
 let level = 0, actx, gain, osc;
 
@@ -59,6 +130,17 @@ function setLevel(s){
   }
   label.textContent = labels[s];
 
+  // 단계별 LED (왼쪽부터 s개 켜짐)
+  leds.forEach((led, i) => led.classList.toggle('on', i < s));
+
+  // 회전
+  if(s === 0){
+    blades.style.animation = 'none';
+  } else {
+    blades.style.animation = `spin ${durations[s]}s linear infinite`;
+  }
+
+  // 모터 소리
   if(!actx){
     actx = new (window.AudioContext||window.webkitAudioContext)();
     osc = actx.createOscillator();
@@ -70,8 +152,6 @@ function setLevel(s){
     osc.start();
   }
   if(actx.state === 'suspended') actx.resume();
-
-  // 부드럽게 전환
   const now = actx.currentTime;
   osc.frequency.setTargetAtTime(freqs[s], now, 0.05);
   gain.gain.setTargetAtTime(volumes[s], now, 0.05);
@@ -82,6 +162,9 @@ if('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js').catch(() => {});
   });
 }
+
+const __auto = new URLSearchParams(location.search).get('auto');
+if(__auto){ setLevel(parseInt(__auto, 10)); }
 </script>
 </body>
 </html>
