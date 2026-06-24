@@ -1,4 +1,4 @@
-const CACHE_NAME = 'handy-fan-v8';
+const CACHE_NAME = 'handy-fan-v9';
 const ASSETS = ['./', './index.html', './manifest.json', './fan.png', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', (event) => {

@@ -15,82 +15,45 @@
   body{margin:0;background:#ffffff;display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;-webkit-user-select:none;user-select:none}
   .app{text-align:center}
   #stage{position:relative;display:inline-block}
-
-  /* 고정 레이어: 손잡이 + 바깥 동그란 보호망(링) */
   .fan-body{display:block;width:240px}
 
-  /* 회전 레이어: 보호망 안쪽의 날개 영역만 잘라서 그 위에 겹쳐 회전 */
-  .fan-blades{
-    position:absolute;
-    border-radius:50%;
-    overflow:hidden;
-    background-repeat:no-repeat;
-    will-change:transform;
-  }
-
-  @keyframes spin {
-    from { transform: rotate(0deg); }
-    to   { transform: rotate(360deg); }
-  }
-
   .ctrl{margin-top:20px}
-  button{padding:10px 18px;margin:0 5px;border-radius:12px;border:1px solid #aaccbb;background:#fff;cursor:pointer;font-size:15px}
+  button{
+    width:56px;height:48px;margin:0 5px;border-radius:12px;
+    border:1px solid #aaccbb;background:#fff;cursor:pointer;font-size:16px;font-weight:600;color:#557766;
+    transition:background .15s ease, color .15s ease, transform .05s ease;
+  }
+  button:active{transform:scale(0.94)}
   button.active{background:#aaccbb;color:#fff}
-  #label{margin-top:10px;color:#557766;font-size:14px}
+  #label{margin-top:12px;color:#557766;font-size:14px}
 </style>
 </head>
 <body>
 <div class="app">
   <div id="stage">
-    <img id="body" class="fan-body" src="fan.png" alt="선풍기">
-    <div id="blades" class="fan-blades"></div>
+    <img class="fan-body" src="fan.png" alt="선풍기">
   </div>
   <div class="ctrl">
-    <button id="b0" onclick="setSpeed(0)">꺼짐</button>
-    <button id="b1" onclick="setSpeed(1)">약</button>
-    <button id="b2" onclick="setSpeed(2)">중</button>
-    <button id="b3" onclick="setSpeed(3)">강</button>
+    <button id="b0" onclick="setLevel(0)">OFF</button>
+    <button id="b1" onclick="setLevel(1)">1</button>
+    <button id="b2" onclick="setLevel(2)">2</button>
+    <button id="b3" onclick="setLevel(3)">3</button>
   </div>
-  <div id="label">대기중</div>
+  <div id="label">꺼짐</div>
 </div>
 
 <script>
-// 잘라낸 사진 기준 날개 영역 중심/반지름 (사진 너비 대비).
-// RADIUS 는 바깥 보호망 링 '안쪽'에 머물도록 설정 -> 링은 절대 회전하지 않음.
-const CENTER_X = 0.5033;
-const CENTER_Y = 0.2819;
-const RADIUS   = 0.366;
-
-const body = document.getElementById('body');
-const blades = document.getElementById('blades');
-
-function layoutBlades(){
-  const dispW = body.clientWidth;
-  const dispH = dispW * (body.naturalHeight / body.naturalWidth);
-  const cx = dispW * CENTER_X;
-  const cy = dispH * CENTER_Y;
-  const r = dispW * RADIUS;
-  blades.style.width  = (r * 2) + 'px';
-  blades.style.height = (r * 2) + 'px';
-  blades.style.left = (cx - r) + 'px';
-  blades.style.top  = (cy - r) + 'px';
-  // 같은 사진을 배경으로 쓰되, 날개 부분이 정확히 보이도록 위치 맞춤
-  blades.style.backgroundImage = "url('" + body.src + "')";
-  blades.style.backgroundSize = dispW + 'px auto';
-  blades.style.backgroundPosition = (-(cx - r)) + 'px ' + (-(cy - r)) + 'px';
-}
-if(body.complete && body.naturalWidth) layoutBlades();
-body.onload = layoutBlades;
-window.addEventListener('resize', layoutBlades);
-
-let speed = 0, actx, gain, osc;
 const label = document.getElementById('label');
-const labels = ['대기중', '약하게 회전 중', '중간 속도로 회전 중', '강하게 회전 중'];
-// 한 바퀴 도는 시간(초) — 작을수록 빠름
-const durations = [0, 0.5, 0.2, 0.09];
+const labels = ['꺼짐', '약풍 (1단)', '중풍 (2단)', '강풍 (3단)'];
 
-function setSpeed(s){
-  speed = s;
+// 단계별 모터 소리: 볼륨 + 주파수(빠를수록 높고 크게)
+const volumes = [0, 0.02, 0.045, 0.07];
+const freqs   = [110, 105, 125, 150];
+
+let level = 0, actx, gain, osc;
+
+function setLevel(s){
+  level = s;
   for(let i=0;i<=3;i++){
     document.getElementById('b'+i).classList.toggle('active', i===s);
   }
@@ -100,7 +63,6 @@ function setSpeed(s){
     actx = new (window.AudioContext||window.webkitAudioContext)();
     osc = actx.createOscillator();
     osc.type = 'sine';
-    osc.frequency.value = 110;
     gain = actx.createGain();
     gain.gain.value = 0;
     osc.connect(gain);
@@ -108,13 +70,11 @@ function setSpeed(s){
     osc.start();
   }
   if(actx.state === 'suspended') actx.resume();
-  gain.gain.value = [0, 0.02, 0.045, 0.07][s];
 
-  if(s === 0){
-    blades.style.animation = 'none';
-  } else {
-    blades.style.animation = `spin ${durations[s]}s linear infinite`;
-  }
+  // 부드럽게 전환
+  const now = actx.currentTime;
+  osc.frequency.setTargetAtTime(freqs[s], now, 0.05);
+  gain.gain.setTargetAtTime(volumes[s], now, 0.05);
 }
 
 if('serviceWorker' in navigator){
@@ -122,9 +82,6 @@ if('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js').catch(() => {});
   });
 }
-
-const __auto = new URLSearchParams(location.search).get('auto');
-if(__auto){ setSpeed(parseInt(__auto, 10)); }
 </script>
 </body>
 </html>
