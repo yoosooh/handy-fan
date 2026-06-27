@@ -114,7 +114,7 @@
 
   <div class="infobtn" onclick="openInfo()">🌙 백색소음 &amp; 안전 안내</div>
   <div class="safety">볼륨은 너무 크지 않게 틀어주세요</div>
-  <div id="ver">v27</div>
+  <div id="ver">v28</div>
 </div>
 
 <!-- 안내 모달 -->
@@ -278,7 +278,17 @@ function closeInfo(){ infoModal.classList.remove('open'); }
 
 /* ---------- PWA ---------- */
 if('serviceWorker' in navigator){
-  window.addEventListener('load', ()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js', {updateViaCache:'none'}).then(reg=>{
+      reg.update();
+      reg.addEventListener('updatefound', ()=>{
+        const nw = reg.installing;
+        nw && nw.addEventListener('statechange', ()=>{
+          if(nw.state === 'activated'){ location.reload(); }
+        });
+      });
+    }).catch(()=>{});
+  });
 }
 const __qs = new URLSearchParams(location.search);
 if(__qs.get('auto')){ setLevel(parseInt(__qs.get('auto'),10)); }
