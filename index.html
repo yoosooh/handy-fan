@@ -114,7 +114,7 @@
 
   <div class="infobtn" onclick="openInfo()">🌙 백색소음 &amp; 안전 안내</div>
   <div class="safety">볼륨은 너무 크지 않게 틀어주세요</div>
-  <div id="ver">v28</div>
+  <div id="ver">v29</div>
 </div>
 
 <!-- 안내 모달 -->
@@ -126,9 +126,9 @@
     <p>저역 중심의 <b>핑크 노이즈</b>는 엄마 뱃속(자궁) 소리와 비슷해서, 신생아·영유아가 더 빨리 안정되고 잘 잠들어요.</p>
 
     <h3>단계별 소리</h3>
-    <div class="lvl"><b>1단 · 자궁 속</b><span>가장 낮고 먹먹한 “우웅~”. 갓 태어난 신생아가 자궁 소리처럼 느껴 가장 편안해해요.</span></div>
-    <div class="lvl"><b>2단 · 빗소리</b><span>잔잔하게 “쏴아~”. 칭얼대는 아기를 부드럽게 달랠 때 좋아요.</span></div>
-    <div class="lvl"><b>3단 · 바람소리</b><span>조금 더 또렷한 “쉬이~”. 울음이 클 때 더 확실히 덮어 진정시켜요.</span></div>
+    <div class="lvl"><b>1단</b><span>가장 낮고 먹먹한 소리. 작게 달랠 때 좋아요.</span></div>
+    <div class="lvl"><b>2단</b><span>중간 음량의 기본 소리.</span></div>
+    <div class="lvl"><b>3단</b><span>조금 더 또렷한 소리. 울음이 클 때 좋아요.</span></div>
 
     <h3>안전하게 사용하기</h3>
     <div class="note">
@@ -224,7 +224,7 @@ function ensureAudio(){
 
 /* ---------- 단계 제어 ---------- */
 const label = document.getElementById('label');
-const labels = ['꺼짐', '1단 · 자궁 속', '2단 · 빗소리', '3단 · 바람소리'];
+const labels = ['꺼짐', '1단', '2단', '3단'];
 // 단계별로 '다른 백색소음' = 필터 톤을 다르게 (낮을수록 먹먹/포근)
 const highpassF = [45, 35, 50, 75];       // 단계별 저음 한계
 const cutoff    = [180, 200, 340, 520];   // 단계별 고음 한계 (폰 스피커 쏘는 느낌 줄이려 더 낮춤)

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>노이즈 비교 테스트</title>
+<style>
+  body{font-family:sans-serif;background:#fafdfb;color:#3f5d50;padding:20px;max-width:480px;margin:0 auto}
+  h1{font-size:18px}
+  .card{border:1px solid #e0e8e4;border-radius:14px;padding:16px;margin:14px 0;background:#fff}
+  .card h2{font-size:15px;margin:0 0 6px}
+  .card p{font-size:13px;color:#6f9384;margin:0 0 10px}
+  button{width:100%;padding:12px;border-radius:10px;border:1px solid #aaccbb;background:#fff;color:#557766;font-size:15px;font-weight:600;cursor:pointer}
+  button.playing{background:#aaccbb;color:#fff}
+  .stop{margin-top:18px}
+  .stop button{background:#f6f0f0;border-color:#e0c8c8;color:#a05a5a}
+</style>
+</head>
+<body>
+<h1>🔊 노이즈 비교 (배포 전 테스트용)</h1>
+
+<div class="card">
+  <h2>A. 현재 앱 (v28) 그대로</h2>
+  <p>지금 핸디 선풍기 앱에 들어있는 버전 그대로.</p>
+  <button onclick="play('A', this)">A 재생</button>
+</div>
+
+<div class="card">
+  <h2>B. 더 부드럽게 (고음 더 깎음)</h2>
+  <p>A보다 고음 한계를 낮추고, 2~4kHz 쏘는 대역을 더 세게 누름.</p>
+  <button onclick="play('B', this)">B 재생</button>
+</div>
+
+<div class="card">
+  <h2>C. 두껍고 묵직하게 (저음 강조)</h2>
+  <p>고음은 B처럼 깎되, 저음 쪽을 살짝 더 살려서 더 "두꺼운" 느낌.</p>
+  <button onclick="play('C', this)">C 재생</button>
+</div>
+
+<div class="card">
+  <h2>D. 아주 약하고 뭉근하게</h2>
+  <p>거의 먹먹한 "우웅~"에 가깝게, 고음을 가장 많이 깎은 버전.</p>
+  <button onclick="play('D', this)">D 재생</button>
+</div>
+
+<div class="stop"><button onclick="stopAll()">정지</button></div>
+
+<script>
+let actx, curSrc, curNodes = [];
+const presets = {
+  A: { hp:35,  lp:200, dipF:2800, dipG:-9,  vol:1.0 },
+  B: { hp:30,  lp:140, dipF:2500, dipG:-14, vol:1.0 },
+  C: { hp:25,  lp:160, dipF:2500, dipG:-14, vol:1.1 },
+  D: { hp:25,  lp:90,  dipF:2200, dipG:-16, vol:1.1 },
+};
+function makeBuffer(ctx){
+  const len = ctx.sampleRate*3;
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
+  for(let i=0;i<len;i++){
+    const w = Math.random()*2 - 1;
+    b0=0.99886*b0+w*0.0555179; b1=0.99332*b1+w*0.0750759; b2=0.96900*b2+w*0.1538520;
+    b3=0.86650*b3+w*0.3104856; b4=0.55000*b4+w*0.5329522; b5=-0.7616*b5-w*0.0168980;
+    d[i]=(b0+b1+b2+b3+b4+b5+b6+w*0.5362)*0.11; b6=w*0.115926;
+  }
+  return buf;
+}
+function stopAll(){
+  if(curSrc){ try{curSrc.stop();}catch(e){} curSrc=null; }
+  document.querySelectorAll('button.playing').forEach(b=>b.classList.remove('playing'));
+}
+function play(key, btn){
+  stopAll();
+  document.querySelectorAll('.card button').forEach(b=>b.classList.remove('playing'));
+  btn.classList.add('playing');
+  if(!actx) actx = new (window.AudioContext||window.webkitAudioContext)();
+  if(actx.state === 'suspended') actx.resume();
+  const p = presets[key];
+  const src = actx.createBufferSource();
+  src.buffer = makeBuffer(actx); src.loop = true;
+  const hp = actx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value = p.hp;
+  const lp = actx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value = p.lp; lp.Q.value = 0.5;
+  const dip = actx.createBiquadFilter(); dip.type='peaking'; dip.frequency.value = p.dipF; dip.Q.value = 0.9; dip.gain.value = p.dipG;
+  const gain = actx.createGain(); gain.gain.value = p.vol;
+  const safety = actx.createDynamicsCompressor();
+  safety.threshold.value=-1; safety.knee.value=0; safety.ratio.value=20; safety.attack.value=0.003; safety.release.value=0.25;
+  src.connect(hp); hp.connect(lp); lp.connect(dip); dip.connect(gain); gain.connect(safety); safety.connect(actx.destination);
+  src.start();
+  curSrc = src;
+}
+</script>
+</body>
+</html>
