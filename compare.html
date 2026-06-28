@@ -49,6 +49,12 @@
   <button onclick="playFan(this)">E 재생</button>
 </div>
 
+<div class="card">
+  <h2>F. A와 E의 중간</h2>
+  <p>A의 차분한 노이즈에 모터 허밍·날개 떨림을 절반 강도로만 살짝 얹은 버전.</p>
+  <button onclick="playMid(this)">F 재생</button>
+</div>
+
 <div class="stop"><button onclick="stopAll()">정지</button></div>
 
 <script>
@@ -112,6 +118,42 @@ function playFan(btn){
   hum1.start(); hum2.start();
 
   curSrc = windSrc;
+  curExtra = [flutterLfo, hum1, hum2];
+}
+function playMid(btn){
+  stopAll();
+  btn.classList.add('playing');
+  if(!actx) actx = new (window.AudioContext||window.webkitAudioContext)();
+  if(actx.state === 'suspended') actx.resume();
+
+  const safety = actx.createDynamicsCompressor();
+  safety.threshold.value=-1; safety.knee.value=0; safety.ratio.value=20; safety.attack.value=0.003; safety.release.value=0.25;
+  safety.connect(actx.destination);
+
+  // A(차분한 노이즈) 베이스
+  const src = actx.createBufferSource();
+  src.buffer = makeBuffer(actx); src.loop = true;
+  const hp = actx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value = 32;
+  const lp = actx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value = 350; lp.Q.value = 0.5;
+  const dip = actx.createBiquadFilter(); dip.type='peaking'; dip.frequency.value = 2700; dip.Q.value = 0.9; dip.gain.value = -11;
+  const gain = actx.createGain(); gain.gain.value = 1.0;
+
+  // E(선풍기) 떨림을 절반 강도로만
+  const flutterLfo = actx.createOscillator(); flutterLfo.type='sine'; flutterLfo.frequency.value = 3.2;
+  const flutterDepth = actx.createGain(); flutterDepth.gain.value = 0.06;
+  flutterLfo.connect(flutterDepth); flutterDepth.connect(gain.gain);
+
+  src.connect(hp); hp.connect(lp); lp.connect(dip); dip.connect(gain); gain.connect(safety);
+  src.start(); flutterLfo.start();
+
+  // 모터 허밍도 절반 강도로만
+  const hum1 = actx.createOscillator(); hum1.type='sine'; hum1.frequency.value = 58;
+  const hum2 = actx.createOscillator(); hum2.type='sine'; hum2.frequency.value = 87;
+  const humGain = actx.createGain(); humGain.gain.value = 0.025;
+  hum1.connect(humGain); hum2.connect(humGain); humGain.connect(safety);
+  hum1.start(); hum2.start();
+
+  curSrc = src;
   curExtra = [flutterLfo, hum1, hum2];
 }
 function play(key, btn){
