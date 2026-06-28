@@ -114,7 +114,7 @@
 
   <div class="infobtn" onclick="openInfo()">🌙 백색소음 &amp; 안전 안내</div>
   <div class="safety">볼륨은 너무 크지 않게 틀어주세요</div>
-  <div id="ver">v29</div>
+  <div id="ver">v30</div>
 </div>
 
 <!-- 안내 모달 -->
@@ -180,8 +180,8 @@ function animate(t){
 }
 function setSpin(lv){ targetSpeed = SPIN_SPEED[lv]; if(!rafId){ lastT = 0; rafId = requestAnimationFrame(animate); } }
 
-/* ---------- 백색소음 (깨끗한 핑크/브라운 노이즈, 단계별 필터만 다름) ---------- */
-let actx, noiseGain, lowpass, highpassNode;
+/* ---------- 백색소음 (1단 차분한 노이즈 → 3단 선풍기 바람소리) ---------- */
+let actx, noiseGain, lowpass, highpassNode, dipNode, flutterDepth, humGain;
 function makeNoiseBuffer(){
   const len = actx.sampleRate*3;
   const buf = actx.createBuffer(1, len, actx.sampleRate);
@@ -204,31 +204,49 @@ function ensureAudio(){
   const src = actx.createBufferSource();
   src.buffer = buf; src.loop = true;
   highpassNode = actx.createBiquadFilter();
-  highpassNode.type = 'highpass'; highpassNode.frequency.value = 45;
+  highpassNode.type = 'highpass'; highpassNode.frequency.value = 35;
   lowpass = actx.createBiquadFilter();
-  lowpass.type = 'lowpass'; lowpass.frequency.value = 300; lowpass.Q.value = 0.5;
+  lowpass.type = 'lowpass'; lowpass.frequency.value = 200; lowpass.Q.value = 0.5;
   // 폰 스피커가 유독 튀게 재생하는 2~4kHz 대역을 한 번 더 깎아서 "쏘는" 느낌 제거
-  const dip = actx.createBiquadFilter();
-  dip.type = 'peaking'; dip.frequency.value = 2800; dip.Q.value = 0.9; dip.gain.value = -9;
+  dipNode = actx.createBiquadFilter();
+  dipNode.type = 'peaking'; dipNode.frequency.value = 2800; dipNode.Q.value = 0.9; dipNode.gain.value = -9;
   noiseGain = actx.createGain(); noiseGain.gain.value = 0;
 
   // 안전망(과도 입력 대비)만 남기고 색깔이 생기는 압축/부스트는 제거 - 더 자연스러운 노이즈
   const safety = actx.createDynamicsCompressor();
   safety.threshold.value = -1; safety.knee.value = 0; safety.ratio.value = 20;
   safety.attack.value = 0.003; safety.release.value = 0.25;
+  safety.connect(actx.destination);
 
-  src.connect(highpassNode); highpassNode.connect(lowpass); lowpass.connect(dip); dip.connect(noiseGain);
-  noiseGain.connect(safety); safety.connect(actx.destination);
+  src.connect(highpassNode); highpassNode.connect(lowpass); lowpass.connect(dipNode); dipNode.connect(noiseGain);
+  noiseGain.connect(safety);
   src.start();
+
+  // 날개가 지나가는 느낌의 잔잔한 떨림 (3단으로 갈수록 강해짐)
+  const flutterLfo = actx.createOscillator(); flutterLfo.type = 'sine'; flutterLfo.frequency.value = 3.2;
+  flutterDepth = actx.createGain(); flutterDepth.gain.value = 0;
+  flutterLfo.connect(flutterDepth); flutterDepth.connect(noiseGain.gain);
+  flutterLfo.start();
+
+  // 모터 저음 허밍 (3단으로 갈수록 강해짐)
+  const hum1 = actx.createOscillator(); hum1.type = 'sine'; hum1.frequency.value = 58;
+  const hum2 = actx.createOscillator(); hum2.type = 'sine'; hum2.frequency.value = 87;
+  humGain = actx.createGain(); humGain.gain.value = 0;
+  hum1.connect(humGain); hum2.connect(humGain); humGain.connect(safety);
+  hum1.start(); hum2.start();
 }
 
 /* ---------- 단계 제어 ---------- */
 const label = document.getElementById('label');
 const labels = ['꺼짐', '1단', '2단', '3단'];
-// 단계별로 '다른 백색소음' = 필터 톤을 다르게 (낮을수록 먹먹/포근)
-const highpassF = [45, 35, 50, 75];       // 단계별 저음 한계
-const cutoff    = [180, 200, 340, 520];   // 단계별 고음 한계 (폰 스피커 쏘는 느낌 줄이려 더 낮춤)
-const noiseVol  = [0, 1.0, 1.3, 1.7];     // 단계별 음량 (한 단계 더 키움, 리미터로 보호)
+// 1단(차분한 노이즈) → 2단(중간) → 3단(선풍기 바람소리)
+const highpassF   = [45, 35, 32, 150];
+const cutoff      = [180, 200, 350, 900];
+const dipFreq     = [2800, 2800, 2700, 2500];
+const dipGain     = [-9, -9, -11, -14];
+const noiseVol    = [0, 1.0, 1.0, 0.9];
+const flutterAmt  = [0, 0, 0.06, 0.12];
+const humAmt      = [0, 0, 0.025, 0.05];
 let level = 0;
 
 function setLevel(s){
@@ -246,6 +264,10 @@ function setLevel(s){
   noiseGain.gain.setTargetAtTime(noiseVol[s], now, fade);
   lowpass.frequency.setTargetAtTime(cutoff[s], now, 0.2);
   highpassNode.frequency.setTargetAtTime(highpassF[s], now, 0.2);
+  dipNode.frequency.setTargetAtTime(dipFreq[s], now, 0.2);
+  dipNode.gain.setTargetAtTime(dipGain[s], now, 0.2);
+  flutterDepth.gain.setTargetAtTime(flutterAmt[s], now, 0.3);
+  humGain.gain.setTargetAtTime(humAmt[s], now, 0.3);
 
   if(s === 0) clearTimer();
 }
