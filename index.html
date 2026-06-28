@@ -114,7 +114,7 @@
 
   <div class="infobtn" onclick="openInfo()">🌙 백색소음 &amp; 안전 안내</div>
   <div class="safety">볼륨은 너무 크지 않게 틀어주세요</div>
-  <div id="ver">v30</div>
+  <div id="ver">v31</div>
 </div>
 
 <!-- 안내 모달 -->
@@ -244,9 +244,9 @@ const highpassF   = [45, 35, 32, 150];
 const cutoff      = [180, 200, 350, 900];
 const dipFreq     = [2800, 2800, 2700, 2500];
 const dipGain     = [-9, -9, -11, -14];
-const noiseVol    = [0, 1.0, 1.0, 0.9];
+const noiseVol    = [0, 1.4, 1.4, 1.25];  // 음량 2단계 더 상향
 const flutterAmt  = [0, 0, 0.06, 0.12];
-const humAmt      = [0, 0, 0.025, 0.05];
+const humAmt      = [0, 0, 0.035, 0.07];
 let level = 0;
 
 function setLevel(s){
