@@ -43,10 +43,16 @@
   <button onclick="play('D', this)">D 재생</button>
 </div>
 
+<div class="card">
+  <h2>E. 선풍기 바람 소리</h2>
+  <p>바람 빠지는 "휘이잉~" 노이즈 + 모터 저음 허밍 + 날개가 지나가는 느낌의 잔잔한 떨림.</p>
+  <button onclick="playFan(this)">E 재생</button>
+</div>
+
 <div class="stop"><button onclick="stopAll()">정지</button></div>
 
 <script>
-let actx, curSrc, curNodes = [];
+let actx, curSrc, curNodes = [], curExtra = [];
 const presets = {
   A: { hp:35,  lp:200, dipF:2800, dipG:-9,  vol:1.0 },
   B: { hp:30,  lp:140, dipF:2500, dipG:-14, vol:1.0 },
@@ -68,7 +74,45 @@ function makeBuffer(ctx){
 }
 function stopAll(){
   if(curSrc){ try{curSrc.stop();}catch(e){} curSrc=null; }
+  curExtra.forEach(n=>{ try{n.stop();}catch(e){} });
+  curExtra = [];
   document.querySelectorAll('button.playing').forEach(b=>b.classList.remove('playing'));
+}
+function playFan(btn){
+  stopAll();
+  btn.classList.add('playing');
+  if(!actx) actx = new (window.AudioContext||window.webkitAudioContext)();
+  if(actx.state === 'suspended') actx.resume();
+
+  const safety = actx.createDynamicsCompressor();
+  safety.threshold.value=-1; safety.knee.value=0; safety.ratio.value=20; safety.attack.value=0.003; safety.release.value=0.25;
+  safety.connect(actx.destination);
+
+  // 바람 빠지는 소리 (브로드밴드 노이즈, 중역 위주)
+  const windSrc = actx.createBufferSource();
+  windSrc.buffer = makeBuffer(actx); windSrc.loop = true;
+  const windHP = actx.createBiquadFilter(); windHP.type='highpass'; windHP.frequency.value = 150;
+  const windLP = actx.createBiquadFilter(); windLP.type='lowpass'; windLP.frequency.value = 900; windLP.Q.value = 0.5;
+  const windDip = actx.createBiquadFilter(); windDip.type='peaking'; windDip.frequency.value = 2500; windDip.Q.value = 0.9; windDip.gain.value = -14;
+  const windGain = actx.createGain(); windGain.gain.value = 0.9;
+
+  // 날개가 지나가는 듯한 잔잔한 떨림 (너무 빠르지 않게, 깊이도 약하게)
+  const flutterLfo = actx.createOscillator(); flutterLfo.type='sine'; flutterLfo.frequency.value = 3.2;
+  const flutterDepth = actx.createGain(); flutterDepth.gain.value = 0.12;
+  flutterLfo.connect(flutterDepth); flutterDepth.connect(windGain.gain);
+
+  windSrc.connect(windHP); windHP.connect(windLP); windLP.connect(windDip); windDip.connect(windGain); windGain.connect(safety);
+  windSrc.start(); flutterLfo.start();
+
+  // 모터 저음 허밍 (살짝 거친 사인파 두 개로 두께감)
+  const hum1 = actx.createOscillator(); hum1.type='sine'; hum1.frequency.value = 58;
+  const hum2 = actx.createOscillator(); hum2.type='sine'; hum2.frequency.value = 87;
+  const humGain = actx.createGain(); humGain.gain.value = 0.05;
+  hum1.connect(humGain); hum2.connect(humGain); humGain.connect(safety);
+  hum1.start(); hum2.start();
+
+  curSrc = windSrc;
+  curExtra = [flutterLfo, hum1, hum2];
 }
 function play(key, btn){
   stopAll();
